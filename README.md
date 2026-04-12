@@ -1,2 +1,2 @@
 # Yuki
-個人リポジトリ
+I am a university student.
