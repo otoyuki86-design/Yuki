@@ -108,3 +108,46 @@ Adding one is a modelling change, not an implementation detail.
 **`E_align`** was also rewritten relative to rest.  The plan's `1 − (n_c·n_d)²`
 drives neighbours toward a common normal, but on a curved scalp neighbours
 legitimately differ at rest, so the absolute form fights the hairstyle.
+
+---
+
+## Final ablation (motion B, large deformation, 24 solver iterations)
+
+| config | inv | flip | cross | ndev |
+|---|---|---|---|---|
+| baseline | 0.2370 | 0.0872 | 0.1878 | 0.3013 |
+| `attr_only` | 0.2291 | 0.0885 | **0.2794** | 0.1956 |
+| `align_only` | **0.2513** | 0.0842 | 0.2142 | 0.2138 |
+| **`order_only`** | **0.0084** | **0.0093** | 0.1839 | 0.3057 |
+| `order+sep` | 0.0170 | 0.0169 | **0.1829** | 0.3064 |
+| `+attr` | 0.0423 | 0.0326 | 0.2543 | 0.1978 |
+| `+align` | 0.0471 | 0.0404 | 0.2002 | 0.2270 |
+| `all` | 0.0588 | 0.0420 | 0.2479 | 0.1888 |
+
+Across motions, `order_only` against baseline:
+
+| motion | inv | flip |
+|---|---|---|
+| A quasi-static | 0.1870 → **0.0000** | 0.0038 → **0.0000** |
+| B large deformation | 0.2370 → 0.0084 (−96%) | 0.0872 → 0.0093 (−89%) |
+| C extreme | 0.2693 → 0.0041 (−98%) | 0.0588 → 0.0045 (−92%) |
+
+### Reading
+
+* **The layer-order term carries the whole result.**  Every other term degrades
+  it monotonically: `order_only` 0.0084 → `order+sep` 0.0170 → `+align` 0.0471
+  → `+attr`/`all` 0.0588.
+* **`attr` and `align` each buy `ndev` and pay in `inv` and `cross`.**  Used
+  alone, both are net negative on their own terms: `attr_only` leaves `inv`
+  unchanged while making `cross` 49% worse; `align_only` makes `inv` *worse*
+  than baseline.
+* `order+sep` is the best configuration on `cross` and is within 2× of
+  `order_only` on the order metrics, so the merged thickness floor is close to
+  free.  It is the recommended default.
+* **Caveat.**  `order_only` raises `cross` in the quasi-static regime
+  (0.0310 → 0.0690): forcing radial order pushes cards through each other
+  laterally when nothing else is driving them.  The merged form recovers most
+  of this at large deformation but the quasi-static cost is real and unexplained.
+* **Caveat.**  `ndev` (M4) is improved *only* by the terms that damage M3 and
+  M2.  With no twist DOF, M4 may not be reachable from this constraint family
+  at all — see §6.
